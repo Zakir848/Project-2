@@ -1,126 +1,197 @@
 import {
-    AppBar,
-    Badge,
-    Box,
-    Button,
-    Container,
-    IconButton,
-    Toolbar,
-    Typography,
-  } from "@mui/material";
-  
-  import { getCart } from "../../services/cartService";
-  import { useEffect, useState } from "react";
-  
-  import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-  import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-  import PersonOutlineIcon from "@mui/icons-material/Person2Outlined";
-  import { useNavigate } from "react-router-dom";
-  
-  function Navbar() {
-    const navigate = useNavigate();
-  
-    const userId = 1;
-  
-    const [cartCount, setCartCount] = useState(0);
-  
-    useEffect(() => {
-      const loadCart = async () => {
-        try {
-          const cart = await getCart(userId);
-  
-          const count = cart.items.reduce(
-            (total, item) => total + item.quantity,
-            0
-          );
-  
-          setCartCount(count);
-        } catch (error) {
-          console.error(error);
-        }
-      };
-  
-      loadCart();
-    }, []);
-  
-    return (
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Button,
+  IconButton,
+  Badge
+} from "@mui/material";
+
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import PersonOutlineIcon from "@mui/icons-material/Person2Outlined";
+
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContextGlobal";
+
+function Navbar() {
+  const navigate = useNavigate();
+
+  const {
+      user,
+      isAuthenticated,
+      logout
+  } = useAuth();
+
+  const handleLogout = async () => {
+      await logout();
+
+      navigate("/");
+  };
+
+  return (
       <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-          backgroundColor: "background.paper",
-          color: "text.primary",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
+          position="sticky"
+          elevation={0}
+          sx={{
+              backgroundColor: "#ffffff",
+              color: "#111827",
+              borderBottom: "1px solid #e5e7eb"
+          }}
       >
-        <Container maxWidth="xl">
-          <Toolbar sx={{ minHeight: 72 }}>
-            <Typography
-              variant="h5"
-              fontWeight="bold"
+          <Toolbar
               sx={{
-                cursor: "pointer",
-                mr: 5,
+                  maxWidth: "1400px",
+                  width: "100%",
+                  mx: "auto",
+                  px: { xs: 2, md: 4 }
               }}
-              onClick={() => navigate("/")}
-            >
-              ShopX
-            </Typography>
-  
-            <Box
-              sx={{
-                display: {
-                  xs: "none",
-                  md: "flex",
-                },
-                gap: 1,
-              }}
-            >
-              <Button color="inherit" onClick={() => navigate("/")}>
-                Home
-              </Button>
-  
-              <Button color="inherit" onClick={() => navigate("/products")}>
-                Products
-              </Button>
-            </Box>
-  
-            <Box sx={{ flexGrow: 1 }} />
-  
-            <IconButton>
-              <Badge badgeContent={0} color="error">
-                <FavoriteBorderIcon />
-              </Badge>
-            </IconButton>
-  
-            <IconButton onClick={() => navigate("/cart")}>
-              <Badge badgeContent={cartCount} color="error">
-                <ShoppingCartIcon />
-              </Badge>
-            </IconButton>
-  
-            <IconButton>
-              <PersonOutlineIcon />
-            </IconButton>
-  
-            <Button
-              variant="contained"
-              sx={{
-                ml: 2,
-                display: {
-                  xs: "none",
-                  sm: "block",
-                },
-              }}
-              onClick={() => navigate("/login")}
-            >
-              Sign In
-            </Button>
+          >
+
+              {/* Logo */}
+              <Typography
+                  component={Link}
+                  to="/"
+                  variant="h5"
+                  fontWeight="800"
+                  sx={{
+                      textDecoration: "none",
+                      color: "#111827",
+                      mr: 5
+                  }}
+              >
+                  E-Shop
+              </Typography>
+
+              {/* Navigation */}
+              <Box
+                  sx={{
+                      display: {
+                          xs: "none",
+                          md: "flex"
+                      },
+                      gap: 3
+                  }}
+              >
+                  <Button
+                      component={Link}
+                      to="/"
+                      sx={{
+                          color: "#374151",
+                          textTransform: "none"
+                      }}
+                  >
+                      Home
+                  </Button>
+
+                  <Button
+                      component={Link}
+                      to="/products"
+                      sx={{
+                          color: "#374151",
+                          textTransform: "none"
+                      }}
+                  >
+                      Products
+                  </Button>
+              </Box>
+
+              <Box sx={{ flexGrow: 1 }} />
+
+              {/* Cart */}
+              <IconButton
+                  onClick={() => navigate("/cart")}
+                  sx={{ mr: 1 }}
+              >
+                  <Badge
+                      badgeContent={0}
+                      color="error"
+                  >
+                      <ShoppingCartIcon />
+                  </Badge>
+              </IconButton>
+
+              {/* Authentication */}
+              {!isAuthenticated ? (
+                  <Box
+                      sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1
+                      }}
+                  >
+                      <Button
+                          component={Link}
+                          to="/login"
+                          sx={{
+                              textTransform: "none",
+                              color: "#374151"
+                          }}
+                      >
+                          Sign In
+                      </Button>
+
+                      <Button
+                          component={Link}
+                          to="/register"
+                          variant="contained"
+                          sx={{
+                              textTransform: "none",
+                              borderRadius: 2,
+                              px: 2.5
+                          }}
+                      >
+                          Sign Up
+                      </Button>
+                  </Box>
+              ) : (
+                  <Box
+                      sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5
+                      }}
+                  >
+                      <PersonOutlineIcon />
+
+                      <Box
+                          sx={{
+                              display: {
+                                  xs: "none",
+                                  sm: "block"
+                              }
+                          }}
+                      >
+                          <Typography
+                              variant="body2"
+                              fontWeight="600"
+                          >
+                              {user?.email}
+                          </Typography>
+
+                          <Typography
+                              variant="caption"
+                              color="text.secondary"
+                          >
+                              {user?.role}
+                          </Typography>
+                      </Box>
+
+                      <Button
+                          onClick={handleLogout}
+                          color="error"
+                          sx={{
+                              textTransform: "none"
+                          }}
+                      >
+                          Logout
+                      </Button>
+                  </Box>
+              )}
+
           </Toolbar>
-        </Container>
       </AppBar>
-    );
-  }
-  
-  export default Navbar;
+  );
+}
+
+export default Navbar;
