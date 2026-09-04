@@ -1,35 +1,49 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Box, Button, Container, Grid, Typography } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  Avatar,
+  Box,
+  Button,
+  Container,
+  Divider,
+  Grid,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Paper,
+  Rating,
+  TextField,
+  Typography,
+} from "@mui/material";
 
 import { addToCart } from "../services/cartService";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContextGlobal";
+import { Label, Send, Star } from "@mui/icons-material";
+import { QRCodeCanvas } from "qrcode.react";
 
 function ProductDetailsPage() {
+  const navigate = useNavigate();
   const { id } = useParams();
-   const {user}=useAuth();
-   const userId=user.userId;
+  const { user } = useAuth();
+
   const [product, setProduct] = useState(null);
 
   const [quantity, setQuantity] = useState(1);
 
-  const handleAddToCart = async () => {
-    try {
-      await addToCart(userId, product.id, quantity);
+  const [commits, setCommits] = useState([]);
 
-      alert("Product added to cart!");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const [rating, setRating] = useState();
+
+  const [text, setText] = useState("");
 
   useEffect(() => {
     const getProduct = async () => {
       try {
         const response = await api.get(`/products/${id}`);
-
+        console.log(response.data);
         setProduct(response.data);
       } catch (error) {
         console.error(error);
@@ -38,6 +52,58 @@ function ProductDetailsPage() {
 
     getProduct();
   }, [id]);
+
+  useEffect(() => {
+    const getProduct = async () => {
+      try {
+        const response = await api.get(`/products/${id}/reviews`);
+
+        console.log(response.data);
+
+        setCommits(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    getProduct();
+  }, []);
+
+  if (user == null) {
+    navigate(`/products/${id}`);
+    return;
+  }
+
+  const userId = user.userId;
+
+  const handleAddToCart = async () => {
+    try {
+      await addToCart(userId, product.id, quantity);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const sendCommit = async () => {
+    try {
+      const review = {
+        rating: rating,
+        commit: text,
+      };
+
+      const response = await api.post(`/products/${id}/reviews`, review);
+
+      console.log(response);
+
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setText("");
+    }
+  };
+
+  console.log(user);
 
   if (!product) {
     return (
@@ -48,8 +114,14 @@ function ProductDetailsPage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Grid container spacing={6}>
+    <Container maxWidth="lg" sx={{ py: 6, color: "black" }}>
+      <Grid
+        container
+        spacing={6}
+        sx={{
+          position: "relative",
+        }}
+      >
         <Grid size={{ xs: 12, md: 6 }}>
           <Box
             component="img"
@@ -62,7 +134,11 @@ function ProductDetailsPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 6, placeItems: "center" }}>
+          <Typography variant="h5" fontWeight="bold">
+            View: {product.viewCount}
+          </Typography>
+
           <Typography variant="h3" fontWeight="bold">
             {product.name}
           </Typography>
@@ -71,9 +147,30 @@ function ProductDetailsPage() {
             {product.category?.name}
           </Typography>
 
-          <Typography variant="h4" fontWeight="bold" sx={{ mt: 3 }}>
-            ${product.price}
-          </Typography>
+          {product.discountPrecent > 0 ? (
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              sx={{ mt: 3, placeItems: "center" }}
+            >
+              <Typography
+                fontWeight="bold"
+                sx={{
+                  mt: 3,
+                  textDecoration: "line-through",
+                  fontSize: "50%",
+                  color: "#888",
+                }}
+              >
+                ${product.price}
+              </Typography>
+              ${product.discountPrice.toFixed(2)}
+            </Typography>
+          ) : (
+            <Typography variant="h4" fontWeight="bold" sx={{ mt: 3 }}>
+              ${product.price}
+            </Typography>
+          )}
 
           <Typography sx={{ mt: 3 }}>{product.description}</Typography>
 
@@ -113,6 +210,154 @@ function ProductDetailsPage() {
           >
             Add To Cart
           </Button>
+        </Grid>
+        {product.discountPrecent > 0 && (
+          <Typography
+            sx={{
+              position: "absolute",
+              zIndex: "5",
+              top: "4%",
+              transform: "rotate(-30deg)",
+              background: "red",
+              color: "white",
+              pl: 1,
+              pr: 1,
+              borderRadius: "50px",
+            }}
+          >
+            {product.discountPrecent}% OFF
+          </Typography>
+        )}
+      </Grid>
+
+      <Divider sx={{ mt: 4 }} />
+
+      <Grid container spacing={4} sx={{ mt: 6 }}>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <Paper
+            elevation={1}
+            sx={{ p: 4, borderRadius: 3, border: "1px solid #eaeaea" }}
+          >
+            <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+              Məhsulu Qiymətləndir
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Fikirləriniz bizim və digər alıcılar üçün önəmlidir.
+            </Typography>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+              <Typography fontWeight="medium">Sizin Balınız:</Typography>
+              <Rating
+                name="product-rating"
+                onChange={(e) => {
+                  setRating(e.target.value);
+                  console.log("Seçilən bal:", e.target.value);
+                }}
+                precision={0.5}
+                size="large"
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Rəyinizi bura yazın..."
+              multiline
+              rows={4}
+              variant="outlined"
+              placeholder="Məhsul haqqında nə düşünürsünüz?"
+              sx={{ mb: 3 }}
+              onChange={(e) => setText(e.target.value)}
+            />
+
+            <Button
+              variant="contained"
+              endIcon={<Send />}
+              size="large"
+              fullWidth
+              sx={{
+                backgroundColor: "black",
+                "&:hover": { backgroundColor: "#333" },
+                borderRadius: 2,
+                py: 1.5,
+              }}
+              onClick={() => sendCommit()}
+            >
+              Rəyi Göndər
+            </Button>
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 7 }}>
+          <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
+            Müştəri Rəyləri ({commits.length || 0})
+          </Typography>
+
+          <Paper
+            elevation={0}
+            sx={{
+              border: "1px solid #eaeaea",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}
+          >
+            <List sx={{ width: "100%", bgcolor: "background.paper", p: 0 }}>
+              {/* Nümunə Rəy 1 */}
+              <ListItem alignItems="flex-start" sx={{ p: 3 }}>
+                COMMITS
+              </ListItem>
+              <Divider component="li" />
+
+              {/* Nümunə Rəy 2 */}
+
+              {commits?.length == 0 ? (
+                <p style={{ height: "150px", placeContent: "center" }}>
+                  NOT FOUND PRODUCT
+                </p>
+              ) : (
+                commits.map((commit,index) => (
+                  <ListItem alignItems="flex-start" sx={{ p: 3 }} key={index}>
+                    <ListItemAvatar>
+                      <Avatar alt="User Name" sx={{ bgcolor: "#555" }}>
+                        {commit.userFirstName[0]}
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            mb: 0.5,
+                          }}
+                        >
+                          <Typography fontWeight="bold" variant="subtitle1">
+                            {commit.userFirstName} {commit.userLastName}
+                          </Typography>
+                          
+                        </Box>
+                      }
+                      secondary={
+                        <>
+                          <Rating
+                            value={commit.rating}
+                            precision={0.5}
+                            size="small"
+                            readOnly
+                            sx={{ mb: 1, display: "flex" }}
+                          />
+                          <Typography variant="body2" color="text.primary">
+                            {commit.commit}
+                          </Typography>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))
+              )}
+            </List>
+          </Paper>
         </Grid>
       </Grid>
     </Container>

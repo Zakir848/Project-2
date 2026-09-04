@@ -111,9 +111,9 @@ namespace ECommerceAfternoon.Server
 
                 string[] roles =
                 {
-        "User",
-        "Admin"
-    };
+                "User",
+                "Admin"
+            };
 
                 foreach (var role in roles)
                 {

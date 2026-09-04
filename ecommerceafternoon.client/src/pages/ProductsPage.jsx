@@ -4,8 +4,10 @@ import {
   Card,
   CardContent,
   CardMedia,
+  Checkbox,
   Container,
   FormControl,
+  FormControlLabel,
   Grid,
   InputLabel,
   MenuItem,
@@ -31,6 +33,7 @@ function ProductsPage() {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isCheck, setIsCheck] = useState(false);
 
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -40,8 +43,12 @@ function ProductsPage() {
   const pageSize = 12;
 
   useEffect(() => {
-    getProducts();
-  }, [search, categoryId, sort, page, minPrice, maxPrice]);
+    if (isCheck) {
+      getOnlyDiscount();
+    } else {
+      getProducts();
+    }
+  }, [search, categoryId, sort, page, minPrice, maxPrice, isCheck]);
 
   useEffect(() => {
     getCategories();
@@ -65,6 +72,22 @@ function ProductsPage() {
 
       setProducts(response.data.items);
       setTotalPages(response.data.totalPages);
+      console.log(response.data.items);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const incrimentViewCountProduct = async (id) => {
+    try {
+      setLoading(true);
+
+      const response = await api.patch(`/products/${id}/incriment-view`);
+      console.log(response.data);
+
+      return response.data;
     } catch (error) {
       console.error(error);
     } finally {
@@ -74,11 +97,30 @@ function ProductsPage() {
 
   const getCategories = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/categories");
 
       setCategories(response.data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getOnlyDiscount = async () => {
+    try {
+      setLoading(true);
+
+      const response = await api.get("/products/discounted");
+
+      console.log(response.data);
+
+      setProducts(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -177,6 +219,15 @@ function ProductsPage() {
             </Select>
           </FormControl>
         </Grid>
+        <Grid sx={{ placeContent: "center" }}>
+          <FormControlLabel
+            control={<Checkbox />}
+            label="Only Discount"
+            onClick={() => {
+              (getOnlyDiscount(), setIsCheck(!isCheck));
+            }}
+          />
+        </Grid>
       </Grid>
 
       {loading ? (
@@ -226,13 +277,17 @@ function ProductsPage() {
                 }}
               >
                 <Card
-                  onClick={() => navigate(`/products/${product.id}`)}
+                  onClick={() => {
+                    (navigate(`/products/${product.id}`),
+                      incrimentViewCountProduct(product.id));
+                  }}
                   sx={{
                     height: "100%",
                     cursor: "pointer",
                     borderRadius: 3,
                     overflow: "hidden",
                     transition: "0.3s",
+                    position: "relative",
                     "&:hover": {
                       transform: "translateY(-6px)",
                       boxShadow: 6,
@@ -244,6 +299,7 @@ function ProductsPage() {
                     height="240"
                     image={product.imageUrl}
                     alt={product.name}
+                    style={{ objectFit: "fill" }}
                   />
 
                   <CardContent>
@@ -255,9 +311,33 @@ function ProductsPage() {
                       {product.categoryName}
                     </Typography>
 
-                    <Typography variant="h6" fontWeight="bold" sx={{ mt: 2 }}>
-                      ${product.price.toFixed(2)}
-                    </Typography>
+                    {product.discountPrecent == 0 ? (
+                      <>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          sx={{ mt: 2 }}
+                        >
+                          ${product.price.toFixed(2)}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography variant="h6" fontWeight="bold" sx={{ mt: 2 }}>
+                        <Typography
+                          fontWeight="bold"
+                          sx={{
+                            mt: 2,
+                            textDecoration: "line-through",
+                            color: "#888",
+                            fontSize: "80%",
+                          }}
+                        >
+                          ${product.price.toFixed(2)}
+                        </Typography>
+
+                        <p>${product.discountPrice}</p>
+                      </Typography>
+                    )}
 
                     <Typography
                       variant="body2"
@@ -269,6 +349,23 @@ function ProductsPage() {
                         : "Out of stock"}
                     </Typography>
                   </CardContent>
+                  {product.discountPrecent > 0 && (
+                    <Typography
+                      sx={{
+                        position: "absolute",
+                        zIndex: "5",
+                        top: "5%",
+                        transform: "rotate(-30deg)",
+                        background: "red",
+                        color: "white",
+                        pl: 1,
+                        pr: 1,
+                        borderRadius: "50px",
+                      }}
+                    >
+                      {product.discountPrecent}% OFF
+                    </Typography>
+                  )}
                 </Card>
               </Grid>
             ))}

@@ -24,6 +24,8 @@ namespace ECommerceAfternoon.Server.Data
 
         public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
+        public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
+
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {

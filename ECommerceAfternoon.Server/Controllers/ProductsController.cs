@@ -20,7 +20,7 @@ namespace ECommerceAfternoon.Server.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetAll(
-   [FromQuery] ProductQueryDto query)
+        [FromQuery] ProductQueryDto query)
         {
             var productsQuery = _context.Products
                 .AsNoTracking()
@@ -75,7 +75,7 @@ namespace ECommerceAfternoon.Server.Controllers
             var pageSize = Math.Clamp(query.PageSize, 1, 50);
 
             var page = Math.Max(query.Page, 1);
-           
+
             var products = await productsQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -87,7 +87,9 @@ namespace ECommerceAfternoon.Server.Controllers
                     Stock = x.Stock,
                     ImageUrl = x.ImageUrl,
                     CategoryId = x.CategoryId,
-                    CategoryName = x.Category.Name
+                    CategoryName = x.Category.Name,
+                    DiscountPrecent = x.DiscountPrecent,
+                    DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100))
                 })
                 .ToListAsync();
 
@@ -106,18 +108,104 @@ namespace ECommerceAfternoon.Server.Controllers
             return Ok(result);
         }
 
+        [HttpGet("discounted")]
+        public async Task<IActionResult> GetDiscountPrecent()
+        {
+            var discountedProducts = await _context.Products.Select(x => new ProductListDto
+            {
+
+            }).Where(d => d.DiscountPrecent > 0).ToListAsync();
+
+            return Ok(discountedProducts);
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var product = await _context.Products
                 .AsNoTracking()
-                .Include(x => x.Category)
+                .Include(x => x.Category).Select(x => new ProductListDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Description = x.Description,
+                    Stock = x.Stock,
+                    Price = x.Price,
+                    ViewCount = x.ViewCount,
+                    ImageUrl = x.ImageUrl,
+                    CategoryId = x.Category.Id,
+                    CategoryName = x.Category.Name,
+                    DiscountPrecent = x.DiscountPrecent,
+                    DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100)),
+                })
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (product is null)
                 return NotFound();
 
             return Ok(product);
+        }
+
+        [HttpGet("{id:int}/reviews")]
+        public async Task<IActionResult> GetReview(int id)
+        {
+
+            var product = await _context.Products.AnyAsync(i => i.Id == id);
+
+            if (!product)
+            {
+                return NotFound();
+            }
+            
+            
+            var commits = _context.ProductReviews.Where(p => p.ProductId == id).
+                Select(x => new ProductReviewListDto
+                {
+                    Id = x.Id,
+                    UserId = x.UserId,
+                    UserFirstName = x.User.FirstName,
+                    UserLastName = x.User.LastName,                    
+                    ProductId = x.Product.Id,
+                    Commit = x.Commit,
+                    Rating = x.Rating
+                }).ToList();
+
+            return Ok(commits);
+
+        }
+
+        [HttpPost("{id:int}/reviews")]
+        public async Task<IActionResult> CreateReview(int id, [FromBody] CreateProductReviewDto dto)
+        {
+
+            var product = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
+
+            if (product is null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            var userExists = await _context.Users.FirstOrDefaultAsync(i => i.Id == dto.UserId);
+
+            if (userExists == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            var commits =  new ProductReview
+            {
+                UserId = dto.UserId,
+                ProductId = dto.ProductId,
+                Commit = dto.Commit,
+                Rating = dto.Rating,
+            };
+
+            _context.ProductReviews.Add(commits);
+
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetReview), new { id = product.Id }, commits);
+
         }
 
         [HttpPost]
@@ -173,10 +261,49 @@ namespace ECommerceAfternoon.Server.Controllers
             product.Stock = dto.Stock;
             product.ImageUrl = dto.ImageUrl;
             product.CategoryId = dto.CategoryId;
+            product.DiscountPrecent = dto.DiscountPrecent;
 
             await _context.SaveChangesAsync();
 
             return Ok(product);
+        }
+
+        [HttpPatch("{id:int}/update-discount")]
+        public async Task<IActionResult> UpdateDiscount(int id, [FromBody] int discountPrecent)
+        {
+            var product = await _context.Products.SingleOrDefaultAsync(i => i.Id == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            product.DiscountPrecent = discountPrecent;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(product);
+        }
+
+        [HttpPatch("{id:int}/incriment-view")]
+        public async Task<IActionResult> IncrimentViewCount(int id)
+        {
+            var product = await _context.Products.SingleOrDefaultAsync(i => i.Id == id);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            product.ViewCount++;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                product.Id,
+                product.ViewCount
+            });
         }
 
         [HttpDelete("{id:int}")]

@@ -42,15 +42,13 @@ namespace ECommerceAfternoon.Server.Controllers
                 id = x.Id,
                 productId = x.ProductId,
                 name = x.Product.Name,
-                price = x.Product.Price,
+                price = x.Product.Price - (x.Product.Price * (x.Product.DiscountPrecent / 100)),
                 imageUrl = x.Product.ImageUrl,
                 quantity = x.Quantity,
-                subtotal = x.Product.Price * x.Quantity
+                subtotal = x.SubTotal
             });
 
-            var total = cart.Items.Sum(
-                x => x.Product.Price * x.Quantity
-            );
+            var total = cart.Items.Sum(x => x.SubTotal);
 
             return Ok(new
             {

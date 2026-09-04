@@ -8,5 +8,6 @@
         public int ProductId { get; set; }
         public Product Product { get; set; } = null!;
         public int Quantity { get; set; }
+        public decimal SubTotal => (Product.Price - (Product.Price * (Product.DiscountPrecent / 100))) * Quantity;
     }
 }
