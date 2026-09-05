@@ -34,6 +34,13 @@ function ProductDetailsPage() {
   const { id } = useParams();
   const { user } = useAuth();
 
+   if (user == null) {
+    navigate(`/products/${id}`);
+    return;
+  }
+
+  const userId = user.userId;
+
   const [product, setProduct] = useState(null);
 
   const [quantity, setQuantity] = useState(1);
@@ -53,7 +60,6 @@ function ProductDetailsPage() {
       try {
         const response = await api.get(`/products/${id}`);
         setProduct(response.data);
-        console.log(response.data);
       } catch (error) {
         console.error(error);
       }
@@ -66,8 +72,6 @@ function ProductDetailsPage() {
     const getProductReview = async () => {
       try {
         const response = await api.get(`/products/${id}/reviews`);
-        console.log(response.data);
-
         setCommits(response.data);
       } catch (error) {
         console.error(error);
@@ -76,13 +80,6 @@ function ProductDetailsPage() {
 
     getProductReview();
   }, [isSubmit]);
-
-  if (user == null) {
-    navigate(`/products/${id}`);
-    return;
-  }
-
-  const userId = user.userId;
 
   const handleAddToCart = async () => {
     try {
@@ -97,7 +94,7 @@ function ProductDetailsPage() {
       setIsSubmit(true);
 
       const review = {
-        userId: user.userId,
+        userId: userId,
         rating: rating,
         commit: text,
       };

@@ -4,6 +4,6 @@
     {
         public int UserId { get; set; }
         public string Commit { get; set; } = string.Empty;
-        public double Rating { get; set; }
+        public float Rating { get; set; }
     }
 }

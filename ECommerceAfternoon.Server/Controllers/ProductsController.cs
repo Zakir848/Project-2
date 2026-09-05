@@ -121,8 +121,8 @@ namespace ECommerceAfternoon.Server.Controllers
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
-        {   
-            var avg = await _context.ProductReviews.Where(r => r.ProductId == id).AverageAsync(r => (float?)r.Rating) ?? 0.0;
+        {
+            var avg = await _context.ProductReviews.Where(r => r.ProductId == id).AverageAsync(r => r.Rating);
 
             var product = await _context.Products
                 .AsNoTracking()
@@ -159,14 +159,14 @@ namespace ECommerceAfternoon.Server.Controllers
             {
                 return NotFound();
             }
-           
+
             var commits = _context.ProductReviews.Where(p => p.ProductId == id).
                 Select(x => new ProductReviewListDto
                 {
                     Id = x.Id,
                     UserId = x.UserId,
                     UserFirstName = x.User.FirstName,
-                    UserLastName = x.User.LastName,                    
+                    UserLastName = x.User.LastName,
                     ProductId = x.Product.Id,
                     Commit = x.Commit,
                     Rating = x.Rating
@@ -194,11 +194,11 @@ namespace ECommerceAfternoon.Server.Controllers
                 return NotFound("User not found.");
             }
 
-            var commits =  new ProductReview
+            var commits = new ProductReview
             {
-                UserId = userExists.Id,                
+                UserId = userExists.Id,
                 Commit = dto.Commit,
-                Rating = dto.Rating, 
+                Rating = dto.Rating,
                 ProductId = product.Id,
             };
 
