@@ -1,6 +1,7 @@
 ﻿using ECommerceAfternoon.Server.Data;
 using ECommerceAfternoon.Server.DTOs.Product;
 using ECommerceAfternoon.Server.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -55,10 +56,10 @@ namespace ECommerceAfternoon.Server.Controllers
             productsQuery = query.Sort.ToLower() switch
             {
                 "priceasc" =>
-                    productsQuery.OrderBy(x => x.Price),
+                    productsQuery.OrderBy(x => x.Price - (x.Price * (x.DiscountPrecent / 100))),
 
                 "pricedesc" =>
-                    productsQuery.OrderByDescending(x => x.Price),
+                    productsQuery.OrderByDescending(x => x.Price - (x.Price * (x.DiscountPrecent / 100))),
 
                 "nameasc" =>
                     productsQuery.OrderBy(x => x.Name),
@@ -113,7 +114,15 @@ namespace ECommerceAfternoon.Server.Controllers
         {
             var discountedProducts = await _context.Products.Select(x => new ProductListDto
             {
-
+                Id = x.Id,
+                DiscountPrecent = x.DiscountPrecent,
+                DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100)),
+                CategoryName = x.Category.Name,
+                CategoryId = x.CategoryId,
+                ImageUrl = x.ImageUrl,
+                Name = x.Name,
+                Stock = x.Stock,
+                Price = x.Price,                
             }).Where(d => d.DiscountPrecent > 0).ToListAsync();
 
             return Ok(discountedProducts);
@@ -255,7 +264,7 @@ namespace ECommerceAfternoon.Server.Controllers
                 product
             );
         }
-
+        
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(
             int id,

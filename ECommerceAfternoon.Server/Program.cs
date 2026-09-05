@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 namespace ECommerceAfternoon.Server
@@ -24,9 +25,6 @@ namespace ECommerceAfternoon.Server
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
             });
-
-
-
 
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
@@ -61,6 +59,7 @@ namespace ECommerceAfternoon.Server
             builder.Services
             .AddAuthentication(
                 JwtBearerDefaults.AuthenticationScheme)
+
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters =
@@ -98,7 +97,37 @@ namespace ECommerceAfternoon.Server
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "WebApplication3 API", Version = "v1" });
+
+                // Swagger UI-a təhlükəsizlik növünü (JWT) tanıtmada istifadə olunur
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Zəhmət olmasa bura yalnız tokeninizi daxil edin (Başına Bearer yazmayın)."
+                });
+
+                // Bütün endpoint-lərə kilid (Authorize) ikonunun əlavə edilməsi
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
 
             var app = builder.Build();
@@ -113,7 +142,7 @@ namespace ECommerceAfternoon.Server
                 {
                 "User",
                 "Admin"
-            };
+                };
 
                 foreach (var role in roles)
                 {

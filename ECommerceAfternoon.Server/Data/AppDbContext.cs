@@ -26,6 +26,9 @@ namespace ECommerceAfternoon.Server.Data
 
         public DbSet<ProductReview> ProductReviews => Set<ProductReview>();
 
+        public DbSet<Wishlist> Wishlist => Set<Wishlist>();
+
+
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {

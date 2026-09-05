@@ -78,7 +78,7 @@ function ProductDetailsPage() {
 
   const handleAddToCart = async () => {
     try {
-      await addToCart(userId, product.id, quantity);
+      await addToCart(user.userId, product.id, quantity);
     } catch (error) {
       console.error(error);
     }

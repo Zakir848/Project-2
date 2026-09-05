@@ -1,0 +1,15 @@
+$kind: http-request
+name: "{{BaseUrl}}/products/"
+description: ""
+url: "{{BaseUrl}}/Auth/login"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"username\": \"zakir@gmail.com\",\r
+
+    \    \"password\": \"Zakir123@\"\r
+
+    }"
+order: 1788612285759

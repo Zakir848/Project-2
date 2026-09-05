@@ -37,7 +37,7 @@ function Footer() {
               Products
             </Link>
 
-            <Link href="#" color="grey.400" underline="none" display="block">
+            <Link href="#" sx={{color:"grey.400", underline:"none", display:"block"}}>
               Categories
             </Link>
           </Grid>
@@ -47,11 +47,11 @@ function Footer() {
               Account
             </Typography>
 
-            <Link href="#" color="grey.400" underline="none" display="block">
+            <Link href="#" sx={{color:"grey.400", underline:"none", display:"block"}}>
               My Account
             </Link>
 
-            <Link href="#" color="grey.400" underline="none" display="block">
+            <Link href="#" sx={{color:"grey.400", underline:"none", display:"block"}}>
               Orders
             </Link>
           </Grid>
@@ -61,9 +61,9 @@ function Footer() {
               Contact
             </Typography>
 
-            <Typography color="grey.400">support@shopx.com</Typography>
 
-            <Typography color="grey.400">+994 50 000 00 00</Typography>
+            <Typography sx={{color: "grey.400"}}>support@shopx.com</Typography>
+            <Typography sx={{color: "grey.400"}}>+994 50 000 00 00</Typography>
           </Grid>
         </Grid>
 
@@ -75,7 +75,7 @@ function Footer() {
             borderColor: "grey.700",
           }}
         >
-          <Typography variant="body2" color="grey.500" textAlign="center">
+          <Typography variant="body2" sx={{textAlign:"center", color:"grey.500"}}>
             © 2026 ShopX. All rights reserved.
           </Typography>
         </Box>

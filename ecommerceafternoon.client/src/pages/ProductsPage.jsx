@@ -9,6 +9,7 @@ import {
   FormControl,
   FormControlLabel,
   Grid,
+  IconButton,
   InputLabel,
   MenuItem,
   Pagination,
@@ -20,12 +21,16 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import api from "../services/api";
+import { useAuth } from "../context/AuthContextGlobal";
+import { Favorite } from "@mui/icons-material";
 
 function ProductsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -33,7 +38,9 @@ function ProductsPage() {
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
   const [isCheck, setIsCheck] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
 
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -54,6 +61,38 @@ function ProductsPage() {
     getCategories();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      getWishlist();
+    }
+  }, [user, isClicked]);
+
+  const incrimentViewCountProduct = async (id) => {
+    try {
+      setLoading(true);
+
+      const response = await api.patch(`/products/${id}/incriment-view`);
+
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get("/categories");
+      setCategories(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getProducts = async () => {
     try {
       setLoading(true);
@@ -72,7 +111,6 @@ function ProductsPage() {
 
       setProducts(response.data.items);
       setTotalPages(response.data.totalPages);
-      console.log(response.data.items);
     } catch (error) {
       console.error(error);
     } finally {
@@ -80,47 +118,40 @@ function ProductsPage() {
     }
   };
 
-  const incrimentViewCountProduct = async (id) => {
+  var getWishlist = async () => {
     try {
-      setLoading(true);
-
-      const response = await api.patch(`/products/${id}/incriment-view`);
-      console.log(response.data);
-
-      return response.data;
+      const response = await api.get("/user/wishlist");
+      setWishlist(response.data);
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const getCategories = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/categories");
-
-      setCategories(response.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+      setIsClicked(false);
     }
   };
 
   const getOnlyDiscount = async () => {
     try {
       setLoading(true);
-
       const response = await api.get("/products/discounted");
-
-      console.log(response.data);
-
       setProducts(response.data);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addWishList = async (id) => {
+    try {
+      if (user == null) {
+        console.log("User Is Null");
+        return;
+      }
+
+      const response = await api.post(`/user/add-wishlist?productId=${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error: ", error);
     }
   };
 
@@ -224,7 +255,8 @@ function ProductsPage() {
             control={<Checkbox />}
             label="Only Discount"
             onClick={() => {
-              (getOnlyDiscount(), setIsCheck(!isCheck));
+              getOnlyDiscount();
+              setIsCheck(!isCheck);
             }}
           />
         </Grid>
@@ -266,109 +298,144 @@ function ProductsPage() {
       ) : (
         <>
           <Grid container spacing={3}>
-            {products.map((product) => (
-              <Grid
-                key={product.id}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3,
-                }}
-              >
-                <Card
-                  onClick={() => {
-                    (navigate(`/products/${product.id}`),
-                      incrimentViewCountProduct(product.id));
-                  }}
-                  sx={{
-                    height: "100%",
-                    cursor: "pointer",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                    transition: "0.3s",
-                    position: "relative",
-                    "&:hover": {
-                      transform: "translateY(-6px)",
-                      boxShadow: 6,
-                    },
+            {products.map((product) => {
+              const isWished = wishlist.some(
+                (item) => item.productId == product.id,
+              );
+              return (
+                <Grid
+                  key={product.id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3,
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    height="240"
-                    image={product.imageUrl}
-                    alt={product.name}
-                    style={{ objectFit: "fill" }}
-                  />
+                  <Card
+                    onClick={() => {
+                      navigate(`/products/${product.id}`);
+                      incrimentViewCountProduct(product.id);
+                    }}
+                    sx={{
+                      height: "100%",
+                      cursor: "pointer",
+                      borderRadius: 3,
+                      overflow: "hidden",
+                      transition: "0.3s",
+                      position: "relative",
+                      "&:hover": {
+                        transform: "translateY(-6px)",
+                        boxShadow: 6,
+                      },
+                    }}
+                  >
+                    <CardMedia
+                      component="img"
+                      height="240"
+                      image={product.imageUrl}
+                      alt={product.name}
+                      style={{ objectFit: "fill" }}
+                    />
 
-                  <CardContent>
-                    <Typography variant="h6" fontWeight="bold">
-                      {product.name}
-                    </Typography>
+                    <CardContent>
+                      <Typography variant="h6" fontWeight="bold">
+                        {product.name}
+                      </Typography>
 
-                    <Typography variant="body2" color="text.secondary">
-                      {product.categoryName}
-                    </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {product.categoryName}
+                      </Typography>
 
-                    {product.discountPrecent == 0 ? (
-                      <>
+                      {product.discountPrecent == 0 ? (
+                        <>
+                          <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            sx={{ mt: 2 }}
+                          >
+                            ${product.price.toFixed(2)}
+                          </Typography>
+                        </>
+                      ) : (
                         <Typography
                           variant="h6"
                           fontWeight="bold"
                           sx={{ mt: 2 }}
                         >
-                          ${product.price.toFixed(2)}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography variant="h6" fontWeight="bold" sx={{ mt: 2 }}>
-                        <Typography
-                          fontWeight="bold"
-                          sx={{
-                            mt: 2,
-                            textDecoration: "line-through",
-                            color: "#888",
-                            fontSize: "80%",
-                          }}
-                        >
-                          ${product.price.toFixed(2)}
-                        </Typography>
+                          <Typography
+                            fontWeight="bold"
+                            sx={{
+                              mt: 2,
+                              textDecoration: "line-through",
+                              color: "#888",
+                              fontSize: "80%",
+                            }}
+                          >
+                            ${product.price.toFixed(2)}
+                          </Typography>
 
-                        <p>${product.discountPrice}</p>
+                          <p>${product.discountPrice.toFixed(2)}</p>
+                        </Typography>
+                      )}
+
+                      <Typography
+                        variant="body2"
+                        color={
+                          product.stock > 0 ? "success.main" : "error.main"
+                        }
+                        sx={{ mt: 1 }}
+                      >
+                        {product.stock > 0
+                          ? `${product.stock} in stock`
+                          : "Out of stock"}
+                      </Typography>
+                    </CardContent>
+
+                    {product.discountPrecent > 0 && (
+                      <Typography
+                        sx={{
+                          position: "absolute",
+                          zIndex: "5",
+                          top: "5%",
+                          transform: "rotate(-30deg)",
+                          background: "red",
+                          color: "white",
+                          pl: 1,
+                          pr: 1,
+                          borderRadius: "50px",
+                        }}
+                      >
+                        {product.discountPrecent}% OFF
                       </Typography>
                     )}
 
-                    <Typography
-                      variant="body2"
-                      color={product.stock > 0 ? "success.main" : "error.main"}
-                      sx={{ mt: 1 }}
-                    >
-                      {product.stock > 0
-                        ? `${product.stock} in stock`
-                        : "Out of stock"}
-                    </Typography>
-                  </CardContent>
-                  {product.discountPrecent > 0 && (
-                    <Typography
-                      sx={{
-                        position: "absolute",
-                        zIndex: "5",
-                        top: "5%",
-                        transform: "rotate(-30deg)",
-                        background: "red",
-                        color: "white",
-                        pl: 1,
-                        pr: 1,
-                        borderRadius: "50px",
-                      }}
-                    >
-                      {product.discountPrecent}% OFF
-                    </Typography>
-                  )}
-                </Card>
-              </Grid>
-            ))}
+                    {user && (
+                      <IconButton
+                        sx={{
+                          position: "absolute",
+                          zIndex: "100",
+                          left: "80%",
+                          top: "2%",
+                          borderRadius: "50px",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsClicked(true);
+                          addWishList(product.id);
+                        }}
+                      >
+                        {isWished ? (
+                          <Favorite color="error" />
+                        ) : (
+                          <Favorite color="action" />
+                        )}
+                      </IconButton>
+                    )}
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
 
           <Box

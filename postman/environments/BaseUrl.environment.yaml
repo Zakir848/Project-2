@@ -1,0 +1,4 @@
+name: BaseUrl
+values:
+  - key: BaseUrl
+    value: 'https://localhost:7020/api'
