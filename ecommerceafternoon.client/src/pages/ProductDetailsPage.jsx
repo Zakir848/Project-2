@@ -7,6 +7,7 @@ import {
   Container,
   Divider,
   Grid,
+  IconButton,
   List,
   ListItem,
   ListItemAvatar,
@@ -22,6 +23,7 @@ import { addToCart } from "../services/cartService";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContextGlobal";
 import {
+  Delete,
   Label,
   Send,
   Star,
@@ -33,13 +35,6 @@ function ProductDetailsPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user } = useAuth();
-
-   if (user == null) {
-    navigate(`/products/${id}`);
-    return;
-  }
-
-  const userId = user.userId;
 
   const [product, setProduct] = useState(null);
 
@@ -93,8 +88,13 @@ function ProductDetailsPage() {
     try {
       setIsSubmit(true);
 
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+
       const review = {
-        userId: userId,
+        userId: user.userId,
         rating: rating,
         commit: text,
       };
@@ -211,11 +211,16 @@ function ProductDetailsPage() {
             variant="contained"
             size="large"
             sx={{ mt: 3 }}
-            disabled={product.stock === 0}
+            disabled={product.stock === 0 || !user}
             onClick={handleAddToCart}
           >
             Add To Cart
           </Button>
+          {!user && (
+            <Typography sx={{ mt: 1, color: "darkorange" }}>
+              For add need Sign In
+            </Typography>
+          )}
         </Grid>
         {product.discountPrecent > 0 && (
           <Typography
@@ -327,7 +332,6 @@ function ProductDetailsPage() {
                   <Star sx={{ color: "orange" }} />{" "}
                   {`(${product.ratingAvg.toFixed(1)})`}
                 </Typography>
-
               </ListItem>
               <Divider />
 

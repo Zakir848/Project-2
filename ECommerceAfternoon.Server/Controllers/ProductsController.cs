@@ -89,7 +89,7 @@ namespace ECommerceAfternoon.Server.Controllers
                     CategoryId = x.CategoryId,
                     CategoryName = x.Category.Name,
                     DiscountPrecent = x.DiscountPrecent,
-                    DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100))
+                    DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100)),
                 })
                 .ToListAsync();
 
@@ -109,7 +109,7 @@ namespace ECommerceAfternoon.Server.Controllers
         }
 
         [HttpGet("discounted")]
-        public async Task<IActionResult> GetDiscountPrecent()
+        public async Task<ActionResult<IEnumerable<ProductListDto>>> GetDiscountPrecent()
         {
             var discountedProducts = await _context.Products.Select(x => new ProductListDto
             {
@@ -120,13 +120,22 @@ namespace ECommerceAfternoon.Server.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<ActionResult<ProductListDto>> GetById(int id)
         {
-            var avg = await _context.ProductReviews.Where(r => r.ProductId == id).AverageAsync(r => r.Rating);
+            double avg = 0;
+
+            var hasReviews = await _context.ProductReviews.AnyAsync(r => r.Product.Id == id);
+
+            if (hasReviews)
+            {
+                avg = await _context.ProductReviews
+                       .Where(r => r.Product.Id == id).AverageAsync(r=>r.Rating);
+            }
 
             var product = await _context.Products
                 .AsNoTracking()
-                .Include(x => x.Category).Select(x => new ProductListDto
+                .Include(x => x.Category)
+                .Select(x => new ProductListDto
                 {
                     Id = x.Id,
                     Name = x.Name,
@@ -139,7 +148,7 @@ namespace ECommerceAfternoon.Server.Controllers
                     CategoryName = x.Category.Name,
                     DiscountPrecent = x.DiscountPrecent,
                     DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100)),
-                    RatingAvg = avg
+                    RatingAvg = avg,
                 })
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -153,15 +162,17 @@ namespace ECommerceAfternoon.Server.Controllers
         public async Task<IActionResult> GetReview(int id)
         {
 
-            var product = await _context.Products.AnyAsync(i => i.Id == id);
+            var product = await _context.Products.FirstOrDefaultAsync(i => i.Id == id);
 
-            if (!product)
-            {
-                return NotFound();
-            }
+            if (product is null)
+                return NotFound("Product not found.");
 
-            var commits = _context.ProductReviews.Where(p => p.ProductId == id).
-                Select(x => new ProductReviewListDto
+
+            var commits = _context.ProductReviews.Where(p => p.Product.Id == id)
+                .AsNoTracking()
+                .Include(p => p.User)
+                .Include(p => p.Product)
+                .Select(x => new ProductReviewListDto
                 {
                     Id = x.Id,
                     UserId = x.UserId,
@@ -171,6 +182,11 @@ namespace ECommerceAfternoon.Server.Controllers
                     Commit = x.Commit,
                     Rating = x.Rating
                 }).ToList();
+
+            if (commits is null)
+            {
+                return NotFound("Commits not fount");
+            }
 
             return Ok(commits);
 

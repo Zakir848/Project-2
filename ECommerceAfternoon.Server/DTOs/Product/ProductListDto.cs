@@ -11,7 +11,7 @@
         public string ImageUrl { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public float RatingAvg { get; set; }
+        public double RatingAvg { get; set; }
         public decimal Price { get; set; }
         public decimal DiscountPrecent { get; set; }
         public decimal DiscountPrice { get; set; }

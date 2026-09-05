@@ -10,6 +10,6 @@ namespace ECommerceAfternoon.Server.DTOs.Product
         public string UserFirstName { get; set; } = string.Empty;
         public string UserLastName { get; set; } = string.Empty;
         public string Commit { get; set; } = string.Empty;
-        public double Rating { get; set; }
+        public double Rating { get; set; } = 0;
     }
 }
