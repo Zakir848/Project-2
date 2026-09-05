@@ -21,8 +21,13 @@ import { addToCart } from "../services/cartService";
 
 import api from "../services/api";
 import { useAuth } from "../context/AuthContextGlobal";
-import { Label, Send, Star } from "@mui/icons-material";
-import { QRCodeCanvas } from "qrcode.react";
+import {
+  Label,
+  Send,
+  Star,
+  StarBorder,
+  StarHalfRounded,
+} from "@mui/icons-material";
 
 function ProductDetailsPage() {
   const navigate = useNavigate();
@@ -35,6 +40,10 @@ function ProductDetailsPage() {
 
   const [commits, setCommits] = useState([]);
 
+  const [isSubmit, setIsSubmit] = useState(false);
+
+  const [error, setError] = useState("");
+
   const [rating, setRating] = useState();
 
   const [text, setText] = useState("");
@@ -43,8 +52,8 @@ function ProductDetailsPage() {
     const getProduct = async () => {
       try {
         const response = await api.get(`/products/${id}`);
-        console.log(response.data);
         setProduct(response.data);
+        console.log(response.data);
       } catch (error) {
         console.error(error);
       }
@@ -54,10 +63,9 @@ function ProductDetailsPage() {
   }, [id]);
 
   useEffect(() => {
-    const getProduct = async () => {
+    const getProductReview = async () => {
       try {
         const response = await api.get(`/products/${id}/reviews`);
-
         console.log(response.data);
 
         setCommits(response.data);
@@ -66,8 +74,8 @@ function ProductDetailsPage() {
       }
     };
 
-    getProduct();
-  }, []);
+    getProductReview();
+  }, [isSubmit]);
 
   if (user == null) {
     navigate(`/products/${id}`);
@@ -86,24 +94,25 @@ function ProductDetailsPage() {
 
   const sendCommit = async () => {
     try {
+      setIsSubmit(true);
+
       const review = {
+        userId: user.userId,
         rating: rating,
         commit: text,
       };
 
-      const response = await api.post(`/products/${id}/reviews`, review);
-
-      console.log(response);
+      const response = await api.post(`/Products/${id}/add-reviews`, review);
 
       return response.data;
     } catch (error) {
       console.error(error);
     } finally {
+      setIsSubmit(false);
       setText("");
+      setRating(0);
     }
   };
-
-  console.log(user);
 
   if (!product) {
     return (
@@ -134,7 +143,7 @@ function ProductDetailsPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, placeItems: "center" }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ placeItems: "center" }}>
           <Typography variant="h5" fontWeight="bold">
             View: {product.viewCount}
           </Typography>
@@ -252,7 +261,6 @@ function ProductDetailsPage() {
                 name="product-rating"
                 onChange={(e) => {
                   setRating(e.target.value);
-                  console.log("Seçilən bal:", e.target.value);
                 }}
                 precision={0.5}
                 size="large"
@@ -266,9 +274,10 @@ function ProductDetailsPage() {
               rows={4}
               variant="outlined"
               placeholder="Məhsul haqqında nə düşünürsünüz?"
-              sx={{ mb: 3 }}
               onChange={(e) => setText(e.target.value)}
             />
+
+            {error && <Typography sx={{ color: "red" }}> {error} </Typography>}
 
             <Button
               variant="contained"
@@ -280,8 +289,17 @@ function ProductDetailsPage() {
                 "&:hover": { backgroundColor: "#333" },
                 borderRadius: 2,
                 py: 1.5,
+                mt: 3,
               }}
-              onClick={() => sendCommit()}
+              onClick={() => {
+                if (rating == 0 || text == "" || text == " ") {
+                  setError("Please, choice rating and writing text");
+                  return;
+                }
+
+                setError("");
+                sendCommit();
+              }}
             >
               Rəyi Göndər
             </Button>
@@ -303,20 +321,33 @@ function ProductDetailsPage() {
           >
             <List sx={{ width: "100%", bgcolor: "background.paper", p: 0 }}>
               {/* Nümunə Rəy 1 */}
-              <ListItem alignItems="flex-start" sx={{ p: 3 }}>
-                COMMITS
-              </ListItem>
-              <Divider component="li" />
+              <ListItem
+                alignItems="flex-start"
+                sx={{ p: 3, display: "flex", placeContent: "space-between" }}
+              >
+                <Typography>COMMITS</Typography>
+                <Typography sx={{ display: "flex", alignItems: "center" }}>
+                  <Star sx={{ color: "orange" }} />{" "}
+                  {`(${product.ratingAvg.toFixed(1)})`}
+                </Typography>
 
-              {/* Nümunə Rəy 2 */}
+              </ListItem>
+              <Divider />
 
               {commits?.length == 0 ? (
-                <p style={{ height: "150px", placeContent: "center" }}>
-                  NOT FOUND PRODUCT
-                </p>
+                <Typography
+                  style={{
+                    height: "150px",
+                    placeContent: "center",
+                    fontSize: "25px",
+                  }}
+                >
+                  No Commits
+                </Typography>
               ) : (
-                commits.map((commit,index) => (
+                commits.map((commit, index) => (
                   <ListItem alignItems="flex-start" sx={{ p: 3 }} key={index}>
+                    <Typography></Typography>
                     <ListItemAvatar>
                       <Avatar alt="User Name" sx={{ bgcolor: "#555" }}>
                         {commit.userFirstName[0]}
@@ -335,7 +366,6 @@ function ProductDetailsPage() {
                           <Typography fontWeight="bold" variant="subtitle1">
                             {commit.userFirstName} {commit.userLastName}
                           </Typography>
-                          
                         </Box>
                       }
                       secondary={
@@ -353,6 +383,7 @@ function ProductDetailsPage() {
                         </>
                       }
                     />
+                    <Divider />
                   </ListItem>
                 ))
               )}

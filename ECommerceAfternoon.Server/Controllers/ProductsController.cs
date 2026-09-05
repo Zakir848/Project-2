@@ -121,7 +121,9 @@ namespace ECommerceAfternoon.Server.Controllers
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
-        {
+        {   
+            var avg = await _context.ProductReviews.Where(r => r.ProductId == id).AverageAsync(r => (float?)r.Rating) ?? 0.0;
+
             var product = await _context.Products
                 .AsNoTracking()
                 .Include(x => x.Category).Select(x => new ProductListDto
@@ -137,6 +139,7 @@ namespace ECommerceAfternoon.Server.Controllers
                     CategoryName = x.Category.Name,
                     DiscountPrecent = x.DiscountPrecent,
                     DiscountPrice = x.Price - (x.Price * (x.DiscountPrecent / 100)),
+                    RatingAvg = avg
                 })
                 .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -156,8 +159,7 @@ namespace ECommerceAfternoon.Server.Controllers
             {
                 return NotFound();
             }
-            
-            
+           
             var commits = _context.ProductReviews.Where(p => p.ProductId == id).
                 Select(x => new ProductReviewListDto
                 {
@@ -174,7 +176,7 @@ namespace ECommerceAfternoon.Server.Controllers
 
         }
 
-        [HttpPost("{id:int}/reviews")]
+        [HttpPost("{id:int}/add-reviews")]
         public async Task<IActionResult> CreateReview(int id, [FromBody] CreateProductReviewDto dto)
         {
 
@@ -194,17 +196,17 @@ namespace ECommerceAfternoon.Server.Controllers
 
             var commits =  new ProductReview
             {
-                UserId = dto.UserId,
-                ProductId = dto.ProductId,
+                UserId = userExists.Id,                
                 Commit = dto.Commit,
-                Rating = dto.Rating,
+                Rating = dto.Rating, 
+                ProductId = product.Id,
             };
 
             _context.ProductReviews.Add(commits);
 
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetReview), new { id = product.Id }, commits);
+            return CreatedAtAction(nameof(GetReview), new { id = commits.Id }, commits);
 
         }
 
