@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.37411.7 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.9.12120.119 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "ecommerceafternoon.client", "ecommerceafternoon.client\ecommerceafternoon.client.esproj", "{00392197-F83C-980F-2B92-7D602AF6D5BB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceAfternoon.Server", "ECommerceAfternoon.Server\ECommerceAfternoon.Server.csproj", "{FA7B0C05-77E2-4408-893E-A6A27766DA80}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerce.Test", "Ecommerce.Test\ECommerce.Test.csproj", "{147A74F8-1E36-4A82-8B42-92515ED40FAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,10 @@ Global
 		{FA7B0C05-77E2-4408-893E-A6A27766DA80}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA7B0C05-77E2-4408-893E-A6A27766DA80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA7B0C05-77E2-4408-893E-A6A27766DA80}.Release|Any CPU.Build.0 = Release|Any CPU
+		{147A74F8-1E36-4A82-8B42-92515ED40FAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{147A74F8-1E36-4A82-8B42-92515ED40FAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{147A74F8-1E36-4A82-8B42-92515ED40FAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{147A74F8-1E36-4A82-8B42-92515ED40FAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

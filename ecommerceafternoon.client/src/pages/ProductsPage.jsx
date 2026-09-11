@@ -107,7 +107,7 @@ function ProductsPage() {
           minPrice: minPrice || undefined,
           maxPrice: maxPrice || undefined,
         },
-      });
+      }); 
 
       setProducts(response.data.items);
       setTotalPages(response.data.totalPages);
